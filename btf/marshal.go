@@ -78,6 +78,8 @@ type Builder struct {
 	stableIDs map[Type]TypeID
 	// Explicitly added strings.
 	strings *stringTableBuilder
+	// Deduplication data structure.
+	deduper *deduper
 }
 
 // NewBuilder creates a Builder from a list of types.
@@ -90,6 +92,7 @@ func NewBuilder(types []Type) (*Builder, error) {
 		make([]Type, 0, len(types)),
 		make(map[Type]TypeID, len(types)),
 		nil,
+		newDeduper(),
 	}
 
 	for _, typ := range types {
@@ -142,6 +145,22 @@ func (b *Builder) Add(typ Type) (TypeID, error) {
 
 	b.stableIDs[typ] = id
 	return id, nil
+}
+
+// AddUnique a Type, allocate a stable ID for it, and deduplicate it.
+//
+// Added types and all types reachable from it are deduplicated based on
+// structural equality, not identity.
+//
+// Adding the equal Type multiple times is valid and will return the same ID.
+func (b *Builder) AddUnique(typ Type) (TypeID, error) {
+	if b.deduper == nil {
+		b.deduper = newDeduper()
+	}
+
+	typ = b.deduper.Deduplicate(typ)
+
+	return b.Add(typ)
 }
 
 // Marshal encodes all types in the Marshaler into BTF wire format.

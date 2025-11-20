@@ -31,7 +31,7 @@ func TestBuilderMarshal(t *testing.T) {
 	cpy := *b
 	buf, err := b.Marshal(nil, &MarshalOptions{Order: internal.NativeEndian})
 	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.CmpEquals(b, &cpy, cmp.AllowUnexported(*b)), qt.Commentf("Marshaling should not change Builder state"))
+	qt.Assert(t, qt.CmpEquals(b, &cpy, cmp.AllowUnexported(*b), cmp.AllowUnexported(*b.deduper)), qt.Commentf("Marshaling should not change Builder state"))
 
 	have, err := loadRawSpec(buf, nil)
 	qt.Assert(t, qt.IsNil(err), qt.Commentf("Couldn't parse BTF"))
